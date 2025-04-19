@@ -30,13 +30,13 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm install
+        run: yarn
 
       - name: Run tests
         run: npm test --if-present
 
       - name: Build frontend
-        run: npm run build
+        run: yarn build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

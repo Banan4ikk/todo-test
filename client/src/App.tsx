@@ -7,7 +7,7 @@ export type Todo = {
   title: string,
 }
 const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://my-todo-app-backend.onrender.com'
+  ? 'https://todo-backend-xr1u.onrender.com'
   : 'http://localhost:5001';
 
 function App() {
