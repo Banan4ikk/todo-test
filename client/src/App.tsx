@@ -4,7 +4,7 @@ import './App.css';
 
 type Todo = {
   id: number,
-  text: string,
+  title: string,
 }
 
 function App() {
@@ -12,20 +12,20 @@ function App() {
   const [newTodo, setNewTodo] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/todos')
+    axios.get('/api/todos')
       .then(res => setTodos(res.data))
       .catch(err => console.error(err));
   }, []);
 
   const addTodo = () => {
-    axios.post('http://localhost:5000/api/todos', { title: newTodo })
+    axios.post('/api/todos', { title: newTodo })
       .then(res => setTodos([...todos, res.data]))
       .catch(err => console.error(err));
     setNewTodo('');
   };
 
   const deleteTodo = (id: number) => {
-    axios.delete(`http://localhost:5000/api/todos/${id}`)
+    axios.delete(`/api/todos/${id}`)
       .then(() => setTodos(todos.filter(todo => todo.id !== id)))
       .catch(err => console.error(err));
   };
@@ -43,7 +43,7 @@ function App() {
       <ul>
         {todos.map(todo => (
           <li key={todo.id}>
-            {todo.text}
+            {todo.title}
             <button onClick={() => deleteTodo(todo.id)}>Delete</button>
           </li>
         ))}
