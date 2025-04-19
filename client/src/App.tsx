@@ -12,20 +12,20 @@ function App() {
   const [newTodo, setNewTodo] = useState('');
 
   useEffect(() => {
-    axios.get('/api/todos')
+    axios.get('http://localhost:3001/api/todos')
       .then(res => setTodos(res.data))
       .catch(err => console.error(err));
   }, []);
 
   const addTodo = () => {
-    axios.post('/api/todos', { title: newTodo })
+    axios.post('http://localhost:3001/api/todos', { title: newTodo })
       .then(res => setTodos([...todos, res.data]))
       .catch(err => console.error(err));
     setNewTodo('');
   };
 
   const deleteTodo = (id: number) => {
-    axios.delete(`/api/todos/${id}`)
+    axios.delete(`http://localhost:3001/api/todos/${id}`)
       .then(() => setTodos(todos.filter(todo => todo.id !== id)))
       .catch(err => console.error(err));
   };
