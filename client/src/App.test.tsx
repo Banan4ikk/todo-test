@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, MockInstance } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {render, screen, fireEvent, waitFor, cleanup} from '@testing-library/react';
 import axios from 'axios';
 import App from "./App";
 
@@ -17,7 +17,11 @@ beforeEach(() => {
   (axios.get as unknown as typeof mockedAxios.get) = mockedAxios.get;
   (axios.post as unknown as typeof mockedAxios.post) = mockedAxios.post;
   (axios.delete as unknown as typeof mockedAxios.delete) = mockedAxios.delete;
-  mockedAxios.post.mockResolvedValue({ data: {} });});
+  mockedAxios.post.mockResolvedValue({ data: {} })});
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('App Component', () => {
   const mockTodos = [
@@ -38,12 +42,12 @@ describe('App Component', () => {
   it('1. Загружает и отображает заголовок и список задач', async () => {
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: /To-Do List/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /To-Do List/i })).to.exist;
 
     await waitFor(() => {
       expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-      expect(screen.getByText('Купить молоко')).toBeInTheDocument();
-      expect(screen.getByText('Сделать домашку')).toBeInTheDocument();
+      expect(screen.getByText('Купить молоко')).to.exist;
+      expect(screen.getByText('Сделать домашку')).to.exist;
     });
   });
 
@@ -55,7 +59,7 @@ describe('App Component', () => {
 
     render(<App />);
 
-    const input = screen.getByPlaceholderText('Название задачи');
+    const input = screen.getByPlaceholderText('Название задачи') as HTMLInputElement;
     const addButton = screen.getByText('Добавить задачу');
 
     fireEvent.change(input, { target: { value: newTask } });
@@ -65,7 +69,7 @@ describe('App Component', () => {
       expect(mockedAxios.post).toHaveBeenCalledWith(expect.stringContaining('/api/todos'), {
         title: newTask,
       });
-      expect(input).toHaveValue('');
+      expect(input.value).to.equal('');
     });
 
     mockedAxios.get.mockResolvedValueOnce({
@@ -73,7 +77,7 @@ describe('App Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(newTask)).toBeInTheDocument();
+      expect(screen.getByText(newTask)).to.be.not.null;
     });
   });
 
@@ -85,7 +89,7 @@ describe('App Component', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText('Купить молоко')).toBeInTheDocument();
+      expect(screen.getByText('Купить молоко')).to.be.not.null;
     });
 
     fireEvent.click(screen.getAllByText('Delete')[0]);
@@ -95,7 +99,7 @@ describe('App Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText('Купить молоко')).not.toBeInTheDocument();
+      expect(screen.queryByText('Купить молоко')).to.be.null;
     });
   });
 
