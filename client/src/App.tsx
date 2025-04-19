@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './App.css';
 
-type Todo = {
+export type Todo = {
   id: number,
   title: string,
 }
@@ -42,7 +42,7 @@ function App() {
         onChange={(e) => setNewTodo(e.target.value)}
         placeholder="Название задачи"
       />
-      <button onClick={addTodo}>Добавить задау</button>
+      <button onClick={addTodo}>Добавить задачу</button>
       <ul>
         {todos.map(todo => (
           <li key={todo.id}>

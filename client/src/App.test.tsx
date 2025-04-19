@@ -1,53 +1,118 @@
-import React from 'react';
+import { describe, it, expect, beforeEach, afterEach, vi, MockInstance } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import App from './App';
 import axios from 'axios';
+import App from "./App";
 
-// Мокаем axios
-jest.mock('axios');
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+vi.mock('axios');
 
-describe('App', () => {
+// Типизированные моки
+const mockedAxios = {
+  get: vi.fn() as MockInstance<typeof axios.get>,
+  post: vi.fn() as MockInstance<typeof axios.post>,
+  delete: vi.fn() as MockInstance<typeof axios.delete>,
+};
+
+// Мокаем axios перед каждым тестом
+beforeEach(() => {
+  (axios.get as unknown as typeof mockedAxios.get) = mockedAxios.get;
+  (axios.post as unknown as typeof mockedAxios.post) = mockedAxios.post;
+  (axios.delete as unknown as typeof mockedAxios.delete) = mockedAxios.delete;
+  mockedAxios.post.mockResolvedValue({ data: {} });});
+
+describe('App Component', () => {
+  const mockTodos = [
+    { id: 1, title: 'Купить молоко' },
+    { id: 2, title: 'Сделать домашку' },
+  ];
+
   beforeEach(() => {
-    mockedAxios.get.mockResolvedValue({ data: [] });
-    mockedAxios.post.mockResolvedValue({ data: { id: 1, title: 'Test Todo' } });
-    mockedAxios.delete.mockResolvedValue({});
+    mockedAxios.get.mockReset().mockResolvedValue({ data: mockTodos });
+    mockedAxios.post.mockReset();
+    mockedAxios.delete.mockReset();
   });
 
-  it('renders To-Do List heading', () => {
-    render(<App />);
-    const headingElement = screen.getByText(/To-Do List/i);
-    expect(headingElement).toBeInTheDocument();
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('adds a new todo', async () => {
+  it('1. Загружает и отображает заголовок и список задач', async () => {
     render(<App />);
-    const input = screen.getByPlaceholderText(/Название задачи/i);
-    const button = screen.getByText(/Добавить задау/i);
 
-    fireEvent.change(input, { target: { value: 'Test Todo' } });
-    fireEvent.click(button);
+    expect(screen.getByRole('heading', { name: /To-Do List/i })).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(screen.getByText(/Test Todo/i)).toBeInTheDocument();
+      expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('Купить молоко')).toBeInTheDocument();
+      expect(screen.getByText('Сделать домашку')).toBeInTheDocument();
     });
   });
 
-  it('deletes a todo', async () => {
+  it('2. Успешно добавляет новую задачу', async () => {
+    const { default: App } = await import('./App');
+    const newTask = 'Новая задача';
+
+    mockedAxios.post.mockResolvedValue({ data: { id: 3, title: newTask } });
+
+    render(<App />);
+
+    const input = screen.getByPlaceholderText('Название задачи');
+    const addButton = screen.getByText('Добавить задачу');
+
+    fireEvent.change(input, { target: { value: newTask } });
+    fireEvent.click(addButton);
+
+    await waitFor(() => {
+      expect(mockedAxios.post).toHaveBeenCalledWith(expect.stringContaining('/api/todos'), {
+        title: newTask,
+      });
+      expect(input).toHaveValue('');
+    });
+
     mockedAxios.get.mockResolvedValueOnce({
-      data: [{ id: 1, title: 'Test Todo' }],
+      data: [...mockTodos, { id: 3, title: newTask }],
     });
 
-    render(<App />);
     await waitFor(() => {
-      expect(screen.getByText(/Test Todo/i)).toBeInTheDocument();
-    });
-
-    const deleteButton = screen.getByText(/Delete/i);
-    fireEvent.click(deleteButton);
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Test Todo/i)).not.toBeInTheDocument();
+      expect(screen.getByText(newTask)).toBeInTheDocument();
     });
   });
+
+  it('3. Удаляет задачу', async () => {
+    const { default: App } = await import('./App');
+
+    mockedAxios.delete.mockResolvedValue({});
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Купить молоко')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByText('Delete')[0]);
+
+    await waitFor(() => {
+      expect(mockedAxios.delete).toHaveBeenCalledWith(expect.stringContaining('/api/todos/1'));
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('Купить молоко')).not.toBeInTheDocument();
+    });
+  });
+
+  it('4. Обрабатывает ошибку при загрузке задач', async () => {
+    const { default: App } = await import('./App');
+
+    const errorMessage = 'Network Error';
+    mockedAxios.get.mockRejectedValue(new Error(errorMessage));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith(expect.objectContaining({ message: errorMessage }));
+    });
+
+    consoleSpy.mockRestore();
+  });
+
 });
