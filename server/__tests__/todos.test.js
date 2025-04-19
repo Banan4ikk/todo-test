@@ -1,19 +1,32 @@
-const request = require('supertest');
-const app = require('../index');
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { app, pool } from '../sever';
+import request from 'supertest';
+
+let server;
+
+beforeAll(() => {
+    server = app.listen(); // создаёт http.Server
+});
+
+afterAll(async () => {
+    server.close();
+    await pool.end(); // закрываем pool, если он используется
+});
 
 describe('Todo API', () => {
-    test('GET /api/todos returns empty array initially', async () => {
-        const res = await request(app).get('/api/todos');
-        expect(res.statusCode).toBe(200);
-        expect(res.body).toEqual([]);
+    it('GET /api/todos возвращает массив', async () => {
+        const res = await request(server).get('/api/todos');
+        expect(res.status).toBe(200);
+        expect(Array.isArray(res.body)).toBe(true);
     });
 
-    test('POST /api/todos creates a new todo', async () => {
-        const res = await request(app)
+    it('POST /api/todos создаёт новую задачу', async () => {
+        const res = await request(server)
             .post('/api/todos')
-            .send({ title: 'Test Todo' });
-        expect(res.statusCode).toBe(200);
+            .send({ title: 'Проверка' });
+
+        expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('id');
-        expect(res.body.title).toBe('Test Todo');
+        expect(res.body.title).toBe('Проверка');
     });
 });
