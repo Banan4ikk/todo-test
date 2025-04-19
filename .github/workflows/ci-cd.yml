@@ -66,10 +66,20 @@ jobs:
   deploy-frontend:
     needs: frontend
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == "push" && github.ref == "refs/heads/main"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Debug directory structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing root directory:"
+          ls -la
+          echo "Listing client directory (if exists):"
+          ls -la client || echo "client directory does not exist"
+          echo "Listing full tree:"
+          tree -a || find . -ls  # tree может быть недоступен, используем find как запасной вариант
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
