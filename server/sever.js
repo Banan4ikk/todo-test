@@ -12,7 +12,7 @@ app.use(cors({
 app.use(express.json());
 
 const pool = new Pool({
-    connectionString: 'postgresql://my_todo_db_19sx_user:60vq0slWTI8rJ7XkT8wuCrGqgtH2xbIu@dpg-d01m96re5dus73bbftng-a.oregon-postgres.render.com/my_todo_db_19sx',
+    connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
